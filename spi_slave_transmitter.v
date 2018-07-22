@@ -1,5 +1,5 @@
-spi_slave_transmitter(clk, miso, sck, ssel, data);
-  parameter DATA_LEN = 16;
+module spi_slave_transmitter(clk, miso, sck, ssel, data);
+  parameter DATA_LEN = 32;
   input clk, sck;
   input ssel; // active low
   output miso;  // hi imp when ssel is high
@@ -14,18 +14,19 @@ spi_slave_transmitter(clk, miso, sck, ssel, data);
   end
 
   wire sck_posedge = sck_sync[1:0] == 2'b10;
+  wire sck_negedge = sck_sync[1:0] == 2'b01;
   wire ssel_posedge = ssel_sync[1:0] == 2'b10;
   wire ssel_negedge = ssel_sync[1:0] == 2'b01;
   wire ssel_active = ssel_sync[0] == 0;
 
   always @(posedge clk) begin
     if (ssel_negedge) begin
-      tx_buffer = data;
+      tx_buffer = data; // 32'h87654321; 
     end else
-    if (sck_posedge) begin
-      tx_buffer = {tx_buffer[DATA_LEN - 2: 0], 1'b0};
-    end else
+    if (sck_negedge) begin
+      tx_buffer = {1'b0, tx_buffer[DATA_LEN - 1: 1]};
+    end
   end
 
-  assign miso = ssel_active ? tx_buffer[DATA_LEN - 1] : 1'bz
+  assign miso = ssel_active ? tx_buffer[0] : 1'bz;
 endmodule
